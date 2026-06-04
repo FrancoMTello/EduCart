@@ -1,4 +1,10 @@
-import type { CartItem } from '../../App'
+type CartItem = {
+  id: number
+  name: string
+  price: number
+  image: string
+  quantity: number
+}
 
 type MainContentProps = {
   cart: CartItem[]

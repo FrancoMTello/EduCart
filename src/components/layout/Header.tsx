@@ -1,33 +1,33 @@
-type HeaderProps = {
-  cartCount: number
-}
 
-export default function Header({ cartCount }: HeaderProps) {
+import { ShoppingCart, User } from "lucide-react";
+import { Link } from "react-router-dom";
+
+
+export default function Header() {
   return (
-    <header className="site-header">
-      <nav className="navbar" aria-label="Main navigation">
-        <a className="brand" href="/">
-          <span className="brand-icon" aria-hidden="true">
-            ED
-          </span>
-          EduCart
-        </a>
+    <header className="bg-white shadow-sm">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        
+        <Link to="/">
+          <h1 className="text-2xl font-bold text-blue-600">
+            EduCart
+          </h1>
+        </Link>
 
-        <ul className="nav-links">
-          <li>
-            <a href="/">Home</a>
-          </li>
-          <li>
-            <a href="/products">Products</a>
-          </li>
-          <li>
-            <a className="cart-link" href="/cart" aria-label="Shopping cart">
-              Cart
-              <span className="cart-counter">{cartCount}</span>
-            </a>
-          </li>
-        </ul>
-      </nav>
+        <nav className="flex items-center gap-6">
+          <Link to="/" className="hover:text-blue-600">
+            Products
+          </Link>
+
+          <Link to="/cart">
+            <ShoppingCart />
+          </Link>
+
+          <Link to="/login">
+            <User />
+          </Link>
+        </nav>
+      </div>
     </header>
-  )
-}
+  );
+};
