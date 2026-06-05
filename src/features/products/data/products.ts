@@ -1,11 +1,4 @@
-
-
-
-
-
-
 import type { Product } from "../types/Product";
-
 
 export const products: Product[] = [
   {
@@ -25,10 +18,10 @@ export const products: Product[] = [
   {
     id: 2,
     sku: "CALC-001",
-    name: "Calculadora Científica",
+    name: "Calculadora Cientifica",
     imageSrc:
       "https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-01-related-product-02.jpg",
-    imageAlt: "Calculadora científica",
+    imageAlt: "Calculadora cientifica",
     price: 25000,
     color: "Negro",
     category: "Tech Tools",
@@ -53,10 +46,10 @@ export const products: Product[] = [
   {
     id: 4,
     sku: "ROBO-001",
-    name: "Kit de Robótica",
+    name: "Kit de Robotica",
     imageSrc:
       "https://tailwindcss.com/plus-assets/img/ecommerce-images/product-page-01-related-product-04.jpg",
-    imageAlt: "Kit de robótica",
+    imageAlt: "Kit de robotica",
     price: 95000,
     color: "Multicolor",
     category: "Tech Tools",
