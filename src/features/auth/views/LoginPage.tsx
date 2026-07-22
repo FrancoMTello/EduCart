@@ -1,12 +1,12 @@
 import Header from "@/components/layout/Header";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import type { FormEvent } from "react";
+
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { z } from "zod";
 
 const loginSchema = z.object({
-  email: z.string().email("Ingresa un email valido."),
+  email: z.email("Ingresa un email valido."),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
 });
 
@@ -25,7 +25,7 @@ export default function LoginPage() {
   const from = (location.state as { from?: { pathname: string } } | null)?.from
     ?.pathname;
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const validation = loginSchema.safeParse(formValues);
 

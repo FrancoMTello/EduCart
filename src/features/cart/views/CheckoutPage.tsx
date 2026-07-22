@@ -1,10 +1,17 @@
 import Header from "@/components/layout/Header";
-import { formatCurrency, useCart } from "@/features/cart/hooks/useCart";
+import { formatCurrency } from "@/features/cart/hooks/useCart";
+import { clearCart } from "@/features/cart/slice/cartSlice";
+import type { RootState, AppDispatch } from "@/features/store/store";
 import { useForm } from "@tanstack/react-form";
 import { CheckCircle2 } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { z } from "zod";
+
+const TAX_RATE = 0.08;
+const SHIPPING_COST = 9.99;
+const FREE_SHIPPING_LIMIT = 100000;
 
 const checkoutSchema = z
   .object({
@@ -35,36 +42,41 @@ const getFieldError = (
 ) => checkoutSchema.safeParse(values).error?.flatten().fieldErrors[fieldName]?.[0];
 
 const CheckoutPage = () => {
-  const { cart, clearCart, summary } = useCart();
+  const dispatch = useDispatch<AppDispatch>();
+  const items = useSelector((state: RootState) => state.cart.items);
   const [orderId, setOrderId] = useState("");
   const [submitError, setSubmitError] = useState("");
-  const isCartEmpty = cart.length === 0;
+  const isCartEmpty = items.length === 0;
+
+  // Cálculos del resumen
+  const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0);
+  const shipping = subtotal > 0 && subtotal < FREE_SHIPPING_LIMIT ? SHIPPING_COST : 0;
+  const tax = subtotal * TAX_RATE;
+  const total = subtotal + shipping + tax;
 
   const form = useForm({
     defaultValues,
     onSubmit: ({ value }) => {
       const validation = checkoutSchema.safeParse(value);
-
       if (!validation.success) {
         setSubmitError("Revisa los datos del formulario antes de continuar.");
         return;
       }
-
       setSubmitError("");
       setOrderId(`EC-${Date.now().toString().slice(-6)}`);
-      clearCart();
+      dispatch(clearCart());
     },
   });
 
+  // Lista de items para mostrar en el resumen
   const orderLines = useMemo(
-    () =>
-      cart.map((item) => ({
-        id: item.product.id,
-        name: item.product.name,
-        quantity: item.quantity,
-        total: item.product.price * item.quantity,
-      })),
-    [cart],
+    () => items.map((item) => ({
+      id: item.id,
+      name: item.name,
+      quantity: item.quantity,
+      total: item.price * item.quantity,
+    })),
+    [items],
   );
 
   if (orderId) {
@@ -98,9 +110,7 @@ const CheckoutPage = () => {
 
       <main className="mx-auto grid max-w-7xl gap-8 px-4 py-10 lg:grid-cols-[minmax(0,1fr)_380px]">
         <section className="rounded-2xl bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold text-gray-950">
-            Checkout seguro
-          </h1>
+          <h1 className="text-3xl font-bold text-gray-950">Checkout seguro</h1>
           <p className="mt-2 text-gray-500">
             Completa tus datos para validar la orden.
           </p>
@@ -139,9 +149,7 @@ const CheckoutPage = () => {
                     <form.Subscribe selector={(state) => state.values}>
                       {(values) => {
                         const error = getFieldError(values, "firstName");
-                        return error ? (
-                          <span className="text-xs text-red-600">{error}</span>
-                        ) : null;
+                        return error ? <span className="text-xs text-red-600">{error}</span> : null;
                       }}
                     </form.Subscribe>
                   </label>
@@ -161,9 +169,7 @@ const CheckoutPage = () => {
                     <form.Subscribe selector={(state) => state.values}>
                       {(values) => {
                         const error = getFieldError(values, "lastName");
-                        return error ? (
-                          <span className="text-xs text-red-600">{error}</span>
-                        ) : null;
+                        return error ? <span className="text-xs text-red-600">{error}</span> : null;
                       }}
                     </form.Subscribe>
                   </label>
@@ -183,9 +189,7 @@ const CheckoutPage = () => {
                     <form.Subscribe selector={(state) => state.values}>
                       {(values) => {
                         const error = getFieldError(values, "phone");
-                        return error ? (
-                          <span className="text-xs text-red-600">{error}</span>
-                        ) : null;
+                        return error ? <span className="text-xs text-red-600">{error}</span> : null;
                       }}
                     </form.Subscribe>
                   </label>
@@ -206,9 +210,7 @@ const CheckoutPage = () => {
                     <form.Subscribe selector={(state) => state.values}>
                       {(values) => {
                         const error = getFieldError(values, "email");
-                        return error ? (
-                          <span className="text-xs text-red-600">{error}</span>
-                        ) : null;
+                        return error ? <span className="text-xs text-red-600">{error}</span> : null;
                       }}
                     </form.Subscribe>
                   </label>
@@ -229,9 +231,7 @@ const CheckoutPage = () => {
                     <form.Subscribe selector={(state) => state.values}>
                       {(values) => {
                         const error = getFieldError(values, "confirmEmail");
-                        return error ? (
-                          <span className="text-xs text-red-600">{error}</span>
-                        ) : null;
+                        return error ? <span className="text-xs text-red-600">{error}</span> : null;
                       }}
                     </form.Subscribe>
                   </label>
@@ -255,9 +255,7 @@ const CheckoutPage = () => {
         </section>
 
         <aside className="h-fit rounded-2xl bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-bold text-gray-950">
-            Resumen de orden
-          </h2>
+          <h2 className="text-xl font-bold text-gray-950">Resumen de orden</h2>
 
           <div className="mt-5 space-y-4">
             {orderLines.map((line) => (
@@ -275,25 +273,19 @@ const CheckoutPage = () => {
           <div className="mt-6 space-y-3 border-t border-gray-200 pt-5 text-sm">
             <div className="flex justify-between">
               <span className="text-gray-500">Subtotal</span>
-              <span className="font-semibold">
-                {formatCurrency(summary.subtotal)}
-              </span>
+              <span className="font-semibold">{formatCurrency(subtotal)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Impuestos</span>
-              <span className="font-semibold">{formatCurrency(summary.tax)}</span>
+              <span className="font-semibold">{formatCurrency(tax)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-gray-500">Envio</span>
-              <span className="font-semibold">
-                {formatCurrency(summary.shipping)}
-              </span>
+              <span className="font-semibold">{formatCurrency(shipping)}</span>
             </div>
             <div className="flex justify-between border-t border-gray-200 pt-4 text-lg font-bold">
               <span>Total</span>
-              <span className="text-blue-600">
-                {formatCurrency(summary.total)}
-              </span>
+              <span className="text-blue-600">{formatCurrency(total)}</span>
             </div>
           </div>
         </aside>

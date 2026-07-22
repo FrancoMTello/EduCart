@@ -1,11 +1,25 @@
 import Header from "@/components/layout/Header";
-import { formatCurrency, useCart } from "@/features/cart/hooks/useCart";
+import { formatCurrency } from "@/features/cart/hooks/useCart";
+import { removeFromCart, updateQuantity } from "@/features/cart/slice/cartSlice";
+import type { RootState, AppDispatch } from "@/features/store/store";
 import { Minus, Plus, Trash2 } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
+const TAX_RATE = 0.08;
+const SHIPPING_COST = 9.99;
+const FREE_SHIPPING_LIMIT = 100000;
+
 const CartPage = () => {
-  const { cart, removeFromCart, summary, updateQuantity } = useCart();
-  const isCartEmpty = cart.length === 0;
+  const dispatch = useDispatch<AppDispatch>();
+  const items = useSelector((state: RootState) => state.cart.items);
+  const isCartEmpty = items.length === 0;
+
+  // Cálculos del resumen — igual que el useMemo del useCart viejo
+  const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0);
+  const shipping = subtotal > 0 && subtotal < FREE_SHIPPING_LIMIT ? SHIPPING_COST : 0;
+  const tax = subtotal * TAX_RATE;
+  const total = subtotal + shipping + tax;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -21,11 +35,7 @@ const CartPage = () => {
               Carrito de compras
             </h1>
           </div>
-
-          <Link
-            to="/"
-            className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-          >
+          <Link to="/" className="text-sm font-semibold text-blue-600 hover:text-blue-700">
             Seguir comprando
           </Link>
         </div>
@@ -57,45 +67,35 @@ const CartPage = () => {
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
-                {cart.map((item) => {
-                  const subtotal = item.product.price * item.quantity;
+                {items.map((item) => {
+                  const subtotalItem = item.price * item.quantity;
 
                   return (
                     <article
-                      key={item.product.id}
+                      key={item.id}
                       className="grid gap-4 px-5 py-5 md:grid-cols-[1fr_140px_180px_140px_48px] md:items-center"
                     >
                       <div className="flex items-center gap-4">
-                        <img
-                          src={item.product.imageSrc}
-                          alt={item.product.imageAlt}
-                          className="h-20 w-20 rounded-xl object-cover"
-                        />
                         <div>
                           <h2 className="font-semibold text-gray-950">
-                            {item.product.name}
+                            {item.name}
                           </h2>
                           <p className="text-sm text-gray-500">
-                            SKU {item.product.sku} · {item.product.category}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            Stock disponible: {item.product.stock_actual}
+                            {formatCurrency(item.price)}
                           </p>
                         </div>
                       </div>
 
                       <p className="text-right font-medium text-gray-900">
-                        {formatCurrency(item.product.price)}
+                        {formatCurrency(item.price)}
                       </p>
 
                       <div className="flex items-center justify-center">
                         <button
                           type="button"
-                          onClick={() =>
-                            updateQuantity(item.product.id, item.quantity - 1)
-                          }
+                          onClick={() => dispatch(updateQuantity({ id: item.id, quantity: item.quantity - 1 }))}
                           className="grid h-9 w-9 place-items-center rounded-l-lg border border-gray-300 hover:bg-gray-100"
-                          aria-label={`Restar unidad de ${item.product.name}`}
+                          aria-label={`Restar unidad de ${item.name}`}
                         >
                           <Minus className="h-4 w-4" />
                         </button>
@@ -104,26 +104,23 @@ const CartPage = () => {
                         </span>
                         <button
                           type="button"
-                          onClick={() =>
-                            updateQuantity(item.product.id, item.quantity + 1)
-                          }
-                          disabled={item.quantity >= item.product.stock_actual}
-                          className="grid h-9 w-9 place-items-center rounded-r-lg border border-gray-300 hover:bg-gray-100 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
-                          aria-label={`Sumar unidad de ${item.product.name}`}
+                          onClick={() => dispatch(updateQuantity({ id: item.id, quantity: item.quantity + 1 }))}
+                          className="grid h-9 w-9 place-items-center rounded-r-lg border border-gray-300 hover:bg-gray-100"
+                          aria-label={`Sumar unidad de ${item.name}`}
                         >
                           <Plus className="h-4 w-4" />
                         </button>
                       </div>
 
                       <p className="text-right font-semibold text-gray-950">
-                        {formatCurrency(subtotal)}
+                        {formatCurrency(subtotalItem)}
                       </p>
 
                       <button
                         type="button"
-                        onClick={() => removeFromCart(item.product.id)}
+                        onClick={() => dispatch(removeFromCart(item.id))}
                         className="grid h-10 w-10 place-items-center rounded-lg text-red-600 hover:bg-red-50"
-                        aria-label={`Eliminar ${item.product.name}`}
+                        aria-label={`Eliminar ${item.name}`}
                       >
                         <Trash2 className="h-5 w-5" />
                       </button>
@@ -135,35 +132,25 @@ const CartPage = () => {
           </section>
 
           <aside className="h-fit rounded-2xl bg-white p-6 shadow-sm lg:sticky lg:top-6">
-            <h2 className="text-xl font-bold text-gray-950">
-              Order Summary
-            </h2>
+            <h2 className="text-xl font-bold text-gray-950">Order Summary</h2>
 
             <div className="mt-6 space-y-4 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-500">Subtotal</span>
-                <span className="font-semibold text-gray-900">
-                  {formatCurrency(summary.subtotal)}
-                </span>
+                <span className="font-semibold text-gray-900">{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Impuestos</span>
-                <span className="font-semibold text-gray-900">
-                  {formatCurrency(summary.tax)}
-                </span>
+                <span className="font-semibold text-gray-900">{formatCurrency(tax)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Envio</span>
-                <span className="font-semibold text-gray-900">
-                  {formatCurrency(summary.shipping)}
-                </span>
+                <span className="font-semibold text-gray-900">{formatCurrency(shipping)}</span>
               </div>
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex justify-between text-lg font-bold">
                   <span>Total</span>
-                  <span className="text-blue-600">
-                    {formatCurrency(summary.total)}
-                  </span>
+                  <span className="text-blue-600">{formatCurrency(total)}</span>
                 </div>
               </div>
             </div>

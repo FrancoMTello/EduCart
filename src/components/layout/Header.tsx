@@ -1,12 +1,18 @@
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { useCart } from "@/features/cart/hooks/useCart";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/features/store/store";
+
 import { LogOut, ShoppingCart, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 
 export default function Header() {
   const { logout, user } = useAuth();
-  const { summary } = useCart();
   const navigate = useNavigate();
+
+  // En lugar de summary.itemCount del useCart viejo
+  const itemCount = useSelector((state: RootState) =>
+    state.cart.items.reduce((total, item) => total + item.quantity, 0)
+  )
 
   const handleLogout = () => {
     logout();
@@ -28,9 +34,9 @@ export default function Header() {
 
           <Link to="/cart" className="relative hover:text-blue-600">
             <ShoppingCart />
-            {summary.itemCount > 0 && (
+            {itemCount > 0 && (
               <span className="absolute -right-3 -top-3 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-xs font-bold text-white">
-                {summary.itemCount}
+                {itemCount}
               </span>
             )}
           </Link>
