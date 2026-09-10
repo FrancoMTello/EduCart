@@ -10,4 +10,5 @@ export interface Product {
   rating: number;
   stock_actual: number;
   stock_minimo: number;
+  description: string
 }

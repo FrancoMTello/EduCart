@@ -1,6 +1,6 @@
 
 import LoginPage from "@/features/auth/views/LoginPage";
-import ProtectedRoute from "@/features/auth/components/ProtectedRoute";
+import ProtectedRoute from "@/routes/ProtectedRoute";
 import RegisterPage from "@/features/auth/views/RegisterPage";
 import CartPage from "@/features/cart/views/CartPage";
 import CheckoutPage from "@/features/cart/views/CheckoutPage";
@@ -8,6 +8,9 @@ import ProductsPage from "@/features/products/views/ProductsPage";
 
 
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import ProductDetailPage from "@/features/products/views/ProductDetailPage"
+
+import DashboardPage from "@/features/dashboard/views/DashBoardPage";
 
 
 const AppRouter = () => {
@@ -18,6 +21,7 @@ const AppRouter = () => {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/cart" element={<CartPage />} />
+        <Route path="/item/:id" element={<ProductDetailPage />} />
         <Route
           path="/checkout"
           element={
@@ -26,6 +30,12 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/admin/dashboard" element={
+          <ProtectedRoute requiredRole="ADMIN">
+            <DashboardPage/>
+          </ProtectedRoute>
+        } />
+        
       </Routes>
     </BrowserRouter>
   );

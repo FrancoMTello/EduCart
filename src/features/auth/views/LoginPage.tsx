@@ -1,53 +1,52 @@
-import Header from "@/components/layout/Header";
-import { useAuth } from "@/features/auth/hooks/useAuth";
-
-import { useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { z } from "zod";
+import Header from "@/components/layout/Header"
+import { useAuth } from "@/features/auth/hooks/useAuth"
+import { useState } from "react"
+import { Link, useLocation, useNavigate } from "react-router-dom"
+import { z } from "zod"
 
 const loginSchema = z.object({
-  email: z.email("Ingresa un email valido."),
+  email: z.string().email("Ingresa un email valido."),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
-});
+})
 
-type LoginFormValues = z.infer<typeof loginSchema>;
+type LoginFormValues = z.infer<typeof loginSchema>
 
 export default function LoginPage() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
+  const { login, error, isLoading } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
+
   const [formValues, setFormValues] = useState<LoginFormValues>({
     email: "",
     password: "",
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof LoginFormValues, string>>>({});
-  const [submitError, setSubmitError] = useState("");
-  const from = (location.state as { from?: { pathname: string } } | null)?.from
-    ?.pathname;
+  })
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof LoginFormValues, string>>>({})
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const validation = loginSchema.safeParse(formValues);
+  // Página de origen — para volver después del login
+  const from = (location.state as { from?: { pathname: string } } | null)?.from?.pathname
 
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    // Valida el formato con Zod
+    const validation = loginSchema.safeParse(formValues)
     if (!validation.success) {
-      const fieldErrors = validation.error.flatten().fieldErrors;
-      setErrors({
-        email: fieldErrors.email?.[0],
-        password: fieldErrors.password?.[0],
-      });
-      setSubmitError("");
-      return;
+      const errors = validation.error.flatten().fieldErrors
+      setFieldErrors({
+        email: errors.email?.[0],
+        password: errors.password?.[0],
+      })
+      return
     }
 
-    try {
-      login(validation.data.email, validation.data.password);
-      navigate(from ?? "/", { replace: true });
-    } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : "No se pudo iniciar sesion.",
-      );
+    setFieldErrors({})
+
+    // Espera el resultado y navega solo si fue exitoso
+    const result = await login(validation.data.email, validation.data.password)
+    if (result.meta.requestStatus === "fulfilled") {
+      navigate(from ?? "/", { replace: true })
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -67,15 +66,12 @@ export default function LoginPage() {
                 type="email"
                 value={formValues.email}
                 onChange={(event) =>
-                  setFormValues((current) => ({
-                    ...current,
-                    email: event.target.value,
-                  }))
+                  setFormValues((current) => ({ ...current, email: event.target.value }))
                 }
                 className="rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
               />
-              {errors.email && (
-                <span className="text-xs text-red-600">{errors.email}</span>
+              {fieldErrors.email && (
+                <span className="text-xs text-red-600">{fieldErrors.email}</span>
               )}
             </label>
 
@@ -85,29 +81,28 @@ export default function LoginPage() {
                 type="password"
                 value={formValues.password}
                 onChange={(event) =>
-                  setFormValues((current) => ({
-                    ...current,
-                    password: event.target.value,
-                  }))
+                  setFormValues((current) => ({ ...current, password: event.target.value }))
                 }
                 className="rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
               />
-              {errors.password && (
-                <span className="text-xs text-red-600">{errors.password}</span>
+              {fieldErrors.password && (
+                <span className="text-xs text-red-600">{fieldErrors.password}</span>
               )}
             </label>
 
-            {submitError && (
+            {/* Error del servidor — viene del store */}
+            {error && (
               <p className="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
-                {submitError}
+                {error}
               </p>
             )}
 
             <button
               type="submit"
-              className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700"
+              disabled={isLoading}
+              className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
             >
-              Entrar
+              {isLoading ? "Ingresando..." : "Entrar"}
             </button>
           </form>
 
@@ -120,5 +115,5 @@ export default function LoginPage() {
         </section>
       </main>
     </div>
-  );
+  )
 }

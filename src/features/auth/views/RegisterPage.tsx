@@ -1,61 +1,59 @@
-import Header from "@/components/layout/Header";
-import { useAuth } from "@/features/auth/hooks/useAuth";
-import type { FormEvent } from "react";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { z } from "zod";
+import Header from "@/components/layout/Header"
+import { useAuth } from "@/features/auth/hooks/useAuth"
+import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
+import { z } from "zod"
 
 const registerSchema = z.object({
   email: z.string().email("Ingresa un email valido."),
   firstName: z.string().min(2, "Ingresa al menos 2 caracteres."),
   lastName: z.string().min(2, "Ingresa al menos 2 caracteres."),
   password: z.string().min(6, "La contraseña debe tener al menos 6 caracteres."),
-});
+})
 
-type RegisterFormValues = z.infer<typeof registerSchema>;
+type RegisterFormValues = z.infer<typeof registerSchema>
 
 export default function RegisterPage() {
-  const { register } = useAuth();
-  const navigate = useNavigate();
+  const { register, error, isLoading } = useAuth()
+  const navigate = useNavigate()
+
   const [formValues, setFormValues] = useState<RegisterFormValues>({
     email: "",
     firstName: "",
     lastName: "",
     password: "",
-  });
-  const [errors, setErrors] = useState<Partial<Record<keyof RegisterFormValues, string>>>({});
-  const [submitError, setSubmitError] = useState("");
+  })
+  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof RegisterFormValues, string>>>({})
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const validation = registerSchema.safeParse(formValues);
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
 
+    // Valida el formato con Zod
+    const validation = registerSchema.safeParse(formValues)
     if (!validation.success) {
-      const fieldErrors = validation.error.flatten().fieldErrors;
-      setErrors({
-        email: fieldErrors.email?.[0],
-        firstName: fieldErrors.firstName?.[0],
-        lastName: fieldErrors.lastName?.[0],
-        password: fieldErrors.password?.[0],
-      });
-      setSubmitError("");
-      return;
+      const errors = validation.error.flatten().fieldErrors
+      setFieldErrors({
+        email: errors.email?.[0],
+        firstName: errors.firstName?.[0],
+        lastName: errors.lastName?.[0],
+        password: errors.password?.[0],
+      })
+      return
     }
 
-    try {
-      register(
-        validation.data.firstName,
-        validation.data.lastName,
-        validation.data.email,
-        validation.data.password,
-      );
-      navigate("/", { replace: true });
-    } catch (error) {
-      setSubmitError(
-        error instanceof Error ? error.message : "No se pudo crear la cuenta.",
-      );
+    setFieldErrors({})
+
+    // Espera el resultado y navega solo si fue exitoso
+    const result = await register(
+      validation.data.firstName,
+      validation.data.lastName,
+      validation.data.email,
+      validation.data.password,
+    )
+    if (result.meta.requestStatus === "fulfilled") {
+      navigate("/", { replace: true })
     }
-  };
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -74,15 +72,12 @@ export default function RegisterPage() {
               <input
                 value={formValues.firstName}
                 onChange={(event) =>
-                  setFormValues((current) => ({
-                    ...current,
-                    firstName: event.target.value,
-                  }))
+                  setFormValues((current) => ({ ...current, firstName: event.target.value }))
                 }
                 className="rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
               />
-              {errors.firstName && (
-                <span className="text-xs text-red-600">{errors.firstName}</span>
+              {fieldErrors.firstName && (
+                <span className="text-xs text-red-600">{fieldErrors.firstName}</span>
               )}
             </label>
 
@@ -91,15 +86,12 @@ export default function RegisterPage() {
               <input
                 value={formValues.lastName}
                 onChange={(event) =>
-                  setFormValues((current) => ({
-                    ...current,
-                    lastName: event.target.value,
-                  }))
+                  setFormValues((current) => ({ ...current, lastName: event.target.value }))
                 }
                 className="rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
               />
-              {errors.lastName && (
-                <span className="text-xs text-red-600">{errors.lastName}</span>
+              {fieldErrors.lastName && (
+                <span className="text-xs text-red-600">{fieldErrors.lastName}</span>
               )}
             </label>
 
@@ -109,15 +101,12 @@ export default function RegisterPage() {
                 type="email"
                 value={formValues.email}
                 onChange={(event) =>
-                  setFormValues((current) => ({
-                    ...current,
-                    email: event.target.value,
-                  }))
+                  setFormValues((current) => ({ ...current, email: event.target.value }))
                 }
                 className="rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
               />
-              {errors.email && (
-                <span className="text-xs text-red-600">{errors.email}</span>
+              {fieldErrors.email && (
+                <span className="text-xs text-red-600">{fieldErrors.email}</span>
               )}
             </label>
 
@@ -127,29 +116,28 @@ export default function RegisterPage() {
                 type="password"
                 value={formValues.password}
                 onChange={(event) =>
-                  setFormValues((current) => ({
-                    ...current,
-                    password: event.target.value,
-                  }))
+                  setFormValues((current) => ({ ...current, password: event.target.value }))
                 }
                 className="rounded-lg border border-gray-300 px-3 py-2 outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
               />
-              {errors.password && (
-                <span className="text-xs text-red-600">{errors.password}</span>
+              {fieldErrors.password && (
+                <span className="text-xs text-red-600">{fieldErrors.password}</span>
               )}
             </label>
 
-            {submitError && (
+            {/* Error del servidor — viene del store */}
+            {error && (
               <p className="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-700 sm:col-span-2">
-                {submitError}
+                {error}
               </p>
             )}
 
             <button
               type="submit"
-              className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 sm:col-span-2"
+              disabled={isLoading}
+              className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 sm:col-span-2"
             >
-              Crear cuenta
+              {isLoading ? "Creando cuenta..." : "Crear cuenta"}
             </button>
           </form>
 
@@ -162,5 +150,5 @@ export default function RegisterPage() {
         </section>
       </main>
     </div>
-  );
+  )
 }

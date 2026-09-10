@@ -1,10 +1,12 @@
 import { useDispatch, useSelector } from "react-redux"
 import { addToCart } from "@/features/cart/slice/cartSlice"
-import type { RootState, AppDispatch } from "../../store/store"
+import type { RootState, AppDispatch } from "../../../store/store"
 import { ShoppingCart } from "lucide-react"
-import { formatCurrency } from "@/features/cart/hooks/useCart"
+import { formatCurrency } from "@/utils/currency"
+import {Link} from "react-router-dom"
 
-export default function ProductCard({ product }: {
+
+export default function ProductCard({ product }:{
   product: {
     id: number
     name: string
@@ -15,6 +17,7 @@ export default function ProductCard({ product }: {
     imageAlt: string
     stock_actual: number
     stock_minimo: number
+
   }
 }) {
   const dispatch = useDispatch<AppDispatch>()
@@ -39,11 +42,13 @@ export default function ProductCard({ product }: {
   return (
     <div className="group rounded-2xl border border-gray-100 bg-white p-3 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
       <div className="overflow-hidden rounded-xl bg-gray-200">
+        <Link to={`/item/${product.id}`}>
         <img
-          src={product.imageSrc}
+          src={product.imageSrc || "/placeholder.png"}
           alt={product.imageAlt}
           className="h-80 w-full object-cover transition duration-300 group-hover:scale-105"
         />
+        </Link>
       </div>
 
       <div className="mt-4 flex justify-between">

@@ -1,7 +1,7 @@
 import Header from "@/components/layout/Header";
-import { formatCurrency } from "@/features/cart/hooks/useCart";
+import { formatCurrency } from "@/utils/currency";
 import { removeFromCart, updateQuantity } from "@/features/cart/slice/cartSlice";
-import type { RootState, AppDispatch } from "@/features/store/store";
+import type { RootState, AppDispatch } from "../../../store/store";
 import { Minus, Plus, Trash2 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";

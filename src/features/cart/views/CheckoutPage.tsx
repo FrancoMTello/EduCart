@@ -1,7 +1,8 @@
 import Header from "@/components/layout/Header";
-import { formatCurrency } from "@/features/cart/hooks/useCart";
+import { formatCurrency } from "@/utils/currency";
 import { clearCart } from "@/features/cart/slice/cartSlice";
-import type { RootState, AppDispatch } from "@/features/store/store";
+import type { RootState, AppDispatch } from "../../../store/store";
+import { orderService } from "@/features/cart/services/orderService";
 import { useForm } from "@tanstack/react-form";
 import { CheckCircle2 } from "lucide-react";
 import { useMemo, useState } from "react";
@@ -44,11 +45,11 @@ const getFieldError = (
 const CheckoutPage = () => {
   const dispatch = useDispatch<AppDispatch>();
   const items = useSelector((state: RootState) => state.cart.items);
-  const [orderId, setOrderId] = useState("");
+  const [orderId, setOrderId] = useState<number | null>(null);
   const [submitError, setSubmitError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isCartEmpty = items.length === 0;
 
-  // Cálculos del resumen
   const subtotal = items.reduce((total, item) => total + item.price * item.quantity, 0);
   const shipping = subtotal > 0 && subtotal < FREE_SHIPPING_LIMIT ? SHIPPING_COST : 0;
   const tax = subtotal * TAX_RATE;
@@ -56,19 +57,38 @@ const CheckoutPage = () => {
 
   const form = useForm({
     defaultValues,
-    onSubmit: ({ value }) => {
+    onSubmit: async ({ value }) => {
       const validation = checkoutSchema.safeParse(value);
       if (!validation.success) {
         setSubmitError("Revisa los datos del formulario antes de continuar.");
         return;
       }
-      setSubmitError("");
-      setOrderId(`EC-${Date.now().toString().slice(-6)}`);
-      dispatch(clearCart());
+
+      setSubmitError("")
+      setIsSubmitting(true)
+
+      try {
+        // Llama a la API con los items del carrito
+        const order = await orderService.create({
+          items: items.map((item) => ({
+            product_id: item.id,
+            quantity: item.quantity,
+          }))
+        })
+
+        // Guarda el ID real de la orden y limpia el carrito
+        setOrderId(order.id)
+        dispatch(clearCart())
+      } catch (error: any) {
+        setSubmitError(
+          error.response?.data?.detail ?? "No se pudo procesar la compra."
+        )
+      } finally {
+        setIsSubmitting(false)
+      }
     },
   });
 
-  // Lista de items para mostrar en el resumen
   const orderLines = useMemo(
     () => items.map((item) => ({
       id: item.id,
@@ -90,7 +110,7 @@ const CheckoutPage = () => {
               Compra confirmada
             </h1>
             <p className="mt-3 text-gray-500">
-              Tu orden {orderId} fue generada correctamente.
+              Tu orden #{orderId} fue generada correctamente.
             </p>
             <Link
               to="/"
@@ -246,9 +266,10 @@ const CheckoutPage = () => {
 
               <button
                 type="submit"
-                className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 sm:col-span-2"
+                disabled={isSubmitting}
+                className="rounded-lg bg-blue-600 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300 sm:col-span-2"
               >
-                Confirmar compra
+                {isSubmitting ? "Procesando..." : "Confirmar compra"}
               </button>
             </form>
           )}

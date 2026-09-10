@@ -1,61 +1,37 @@
-import { useSyncExternalStore } from "react";
-import { authService } from "@/features/auth/services/authService";
-
-const AUTH_UPDATED_EVENT = "educart:auth-updated";
-let authSnapshot = authService.getSession();
-
-const notifyAuthUpdated = () => {
-  authSnapshot = authService.getSession();
-  window.dispatchEvent(new Event(AUTH_UPDATED_EVENT));
-};
-
-const subscribeToAuth = (callback: () => void) => {
-  const handleStorage = () => {
-    authSnapshot = authService.getSession();
-    callback();
-  };
-
-  window.addEventListener(AUTH_UPDATED_EVENT, callback);
-  window.addEventListener("storage", handleStorage);
-
-  return () => {
-    window.removeEventListener(AUTH_UPDATED_EVENT, callback);
-    window.removeEventListener("storage", handleStorage);
-  };
-};
-
-const getSnapshot = () => authSnapshot;
+import { useDispatch, useSelector } from "react-redux"
+import type { RootState, AppDispatch } from "@/store/store"
+import { logout, clearError, loginThunk, registerThunk } from "@/features/auth/slice/authSlice"
 
 export const useAuth = () => {
-  const session = useSyncExternalStore(subscribeToAuth, getSnapshot, () => null);
+  const dispatch = useDispatch<AppDispatch>()
+
+  const session = useSelector((state: RootState) => state.auth.session)
+  const error = useSelector((state: RootState) => state.auth.error)
+  const isLoading = useSelector((state: RootState) => state.auth.isLoading)
 
   return {
     isAuthenticated: Boolean(session),
-    login: (email: string, password: string) => {
-      const nextSession = authService.login({ email, password });
-      notifyAuthUpdated();
-      return nextSession;
-    },
-    logout: () => {
-      authService.logout();
-      notifyAuthUpdated();
-    },
-    register: (
-      firstName: string,
-      lastName: string,
-      email: string,
-      password: string,
-    ) => {
-      const nextSession = authService.register({
-        email,
-        firstName,
-        lastName,
-        password,
-      });
-      notifyAuthUpdated();
-      return nextSession;
-    },
     session,
     user: session?.user ?? null,
-  };
-};
+    error,
+    isLoading,
+
+    // Devuelve la promesa para poder hacer await en el componente
+    login: (email: string, password: string) => {
+      return dispatch(loginThunk({ email, password }))
+    },
+
+    logout: () => {
+      dispatch(logout())
+    },
+
+    // Devuelve la promesa para poder hacer await en el componente
+    register: (firstName: string, lastName: string, email: string, password: string) => {
+      return dispatch(registerThunk({ firstName, lastName, email, password }))
+    },
+
+    clearError: () => {
+      dispatch(clearError())
+    }
+  }
+}
