@@ -20,9 +20,24 @@ def create(session: Session, data: ProductCreate) -> Product:
     return product_repository.create(session, data)
 
 def update(session: Session, product_id: int, data: dict) -> Product:
-    """Actualiza un producto — tira 404 si no existe"""
-    product = get_by_id(session, product_id)
-    return product_repository.update(session, product, data)
+    # 1. Busca el producto por ID
+    product = session.get(Product, product_id)
+    if not product:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, 
+            detail="Producto no encontrado"
+        )
+    
+    # 2. Actualiza dinámicamente solo los campos enviados (ej: price, stock_actual)
+    for key, value in data.items():
+        if hasattr(product, key) and value is not None:
+            setattr(product, key, value)
+            
+    # 3. Guarda cambios en DB
+    session.add(product)
+    session.commit()
+    session.refresh(product)
+    return product
 
 def delete(session: Session, product_id: int) -> None:
     """Elimina un producto — tira 404 si no existe"""

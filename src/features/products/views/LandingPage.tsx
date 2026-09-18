@@ -1,13 +1,6 @@
 import Header from "@/components/layout/Header"
 import { Link } from "react-router-dom"
 
-import ProductCard from "@/features/products/components/ProductCard"
-import { productService } from "@/features/products/services/productService"
-import type { Product } from "@/features/products/types/Product"
-import { useEffect, useState } from "react"
-
-
-// Categorías con descripción e ícono emoji
 const categories = [
   {
     name: "Libros",
@@ -47,73 +40,45 @@ const categories = [
 ]
 
 export default function LandingPage() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  // Productos destacados — los 4 con mayor rating
-
-  const featuredProducts = [...products]
-  .sort((a, b) => b.rating - a.rating)
-  .slice(0, 4)
-
-  useEffect(() => {
-  const fetchProducts = async () => {
-    try {
-      const data = await productService.getAll()
-      setProducts(data)
-    } catch (error) {
-      console.error("Error cargando productos:", error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-  fetchProducts()
-  }, [])
-
-  if (isLoading) {
   return (
-    <div className="min-h-screen bg-white">
-      <Header />
-      <main className="py-20 text-center">
-        <p className="text-gray-500">
-          Cargando productos destacados...
-        </p>
-      </main>
-    </div>
-  )
-}
+
+    <div className="w-screen overflow-x-hidden">
+    <div>
+      <Header/>
+
+      {/* Hero Banner en bloque independiente */}
+      {/* Hero Banner */}
+
+
+<section className="w-full bg-blue-600 p-11">
   
+  {/* 💡 1. Quitamos 'flex' de este contenedor para dejar que 'mx-auto' y 'text-center' hagan su trabajo limpio en bloque */}
+  <div className="mx-auto w-full max-w-4xl px-6 text-center">
+    
+    {/* Título */}
+    <h1 className="text-4xl font-black tracking-tight sm:text-5xl md:text-6xl text-white">
+      EduCart
+    </h1>
 
-  return (
-    <div className="min-h-screen bg-white">
-      <Header />
+    {/* 💡 2. 'mx-auto' + 'text-center' + 'block' le da el centrado perfecto al párrafo */}
+    <p className="mx-auto mt-4 block max-w-xl text-center text-base font-normal text-blue-100 sm:text-lg leading-relaxed  align-middle">
+      Todo lo que necesitás para aprender, en un solo lugar. Libros, tecnología, robótica y más.
+    </p>
 
-      {/* Hero */}
-      <section className="bg-linear-to-br from-blue-600 to-blue-800 px-4 py-20 text-center text-white">
-        <p className="text-sm font-semibold uppercase tracking-widest text-blue-200">
-          Bienvenido a
-        </p>
-        <h1 className="mt-2 text-5xl font-bold">EduCart</h1>
-        <p className="mx-auto mt-4 max-w-xl text-lg text-blue-100">
-          Todo lo que necesitás para aprender, en un solo lugar.
-          Libros, tecnología, robótica y más.
-        </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <Link
-            to="/products"
-            className="rounded-lg bg-white px-6 py-3 text-sm font-semibold text-blue-600 hover:bg-blue-50"
-          >
-            Ver catálogo
-          </Link>
-          <Link
-            to="/register"
-            className="rounded-lg border border-white px-6 py-3 text-sm font-semibold text-white hover:bg-blue-700"
-          >
-            Crear cuenta
-          </Link>
-        </div>
-      </section>
+    {/* 💡 3. Este contenedor engloba al botón y lo centra con flex */}
+    <div className="mt-8 flex justify-center">
+      <Link
+        to="/products"
+        className="inline-block rounded-xl bg-white px-8 py-3.5 text-sm font-bold text-blue-600 shadow-md hover:bg-blue-50 active:scale-95 transition-all"
+      >
+        Ver Catálogo
+      </Link>
+    </div>
 
-      {/* Categorías destacadas */}
+  </div>
+</section>
+
+      {/* Categorías */}
       <section className="mx-auto max-w-7xl px-4 py-16">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-gray-900">
@@ -128,7 +93,6 @@ export default function LandingPage() {
           {categories.map((cat) => (
             <Link
               key={cat.name}
-              // Navega a /products con el filtro de categoría en la URL
               to={`/products?category=${cat.name}`}
               className={`flex flex-col items-center gap-3 rounded-2xl border p-6 text-center transition hover:-translate-y-1 hover:shadow-md ${cat.color}`}
             >
@@ -140,36 +104,8 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Productos destacados */}
-      <section className="bg-gray-50 px-4 py-16">
-        <div className="mx-auto max-w-7xl">
-          <div className="flex items-end justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">
-                Más valorados
-              </h2>
-              <p className="mt-2 text-gray-500">
-                Los productos mejor calificados por nuestros estudiantes
-              </p>
-            </div>
-            <Link
-              to="/products"
-              className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-            >
-              Ver todos →
-            </Link>
-          </div>
-
-          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA final */}
-      <section className="px-4 py-16 text-center">
+      <section className="bg-gray-50 px-4 py-16 text-center">
         <div className="mx-auto max-w-2xl">
           <h2 className="text-3xl font-bold text-gray-900">
             ¿Listo para empezar?
@@ -186,10 +122,11 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Footer simple */}
+      {/* Footer */}
       <footer className="border-t border-gray-200 px-4 py-8 text-center text-sm text-gray-400">
         © {new Date().getFullYear()} EduCart. Todos los derechos reservados.
       </footer>
+    </div>
     </div>
   )
 }

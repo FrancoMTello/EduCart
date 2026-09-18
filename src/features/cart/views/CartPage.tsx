@@ -59,7 +59,7 @@ const CartPage = () => {
                   Agrega productos del catalogo para iniciar tu compra.
                 </p>
                 <Link
-                  to="/"
+                  to="/products"
                   className="mt-6 inline-flex rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
                 >
                   Ver productos

@@ -147,7 +147,7 @@ const ProductsPage = () => {
                   type="range"
                   min={0}
                   max={maxCatalogPrice}
-                  step={1000}
+                  step={1}
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(Number(e.target.value))}
                   className="mt-2 w-full accent-blue-600"
@@ -161,7 +161,7 @@ const ProductsPage = () => {
                     <button
                       key={r}
                       onClick={() => setMinRating(r)}
-                      className={`rounded-lg px-2 py-1 text-sm font-medium transition ${
+                      className={`rounded-lg px-1 py-1 text-sm font-medium transition ${
                         minRating === r
                           ? "bg-blue-600 text-white"
                           : "text-gray-600 hover:bg-gray-100"

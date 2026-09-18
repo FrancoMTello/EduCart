@@ -33,4 +33,20 @@ export const productService = {
       imageAlt: response.data.name,
     };
   },
-}
+
+
+  create: async (productData: Omit<Product, "id">): Promise<Product> => {
+    // Convertimos imageSrc a image_url para enviar al backend en FastAPI
+    const payload = {
+      ...productData,
+      image_url: productData.imageSrc,
+    };
+
+    const response = await axiosInstance.post("/products/", payload);
+    return {
+      ...response.data,
+      imageSrc: response.data.image_url,
+      imageAlt: response.data.name,
+    };
+  },
+};
